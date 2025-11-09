@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Project Expense Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+   <h1 class="brand"><span>Minty</span> Expense Tracker</h1>
+
+    <form id="project-form">
+      <input type="text" id="project-name" placeholder="Enter project name..." required>
+      <button type="submit">Add Project</button>
+    </form>
+
+    <input type="text" id="filter" placeholder="Search project..." />
+    <div id="projects"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
