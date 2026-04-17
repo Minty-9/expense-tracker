@@ -3,22 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Multi-Project Expense Tracker</title>
+  <title>Minty Expense Tracker</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-   <h1 class="brand"><span>Minty</span> Expense Tracker</h1>
 
-    <form id="project-form">
-      <input type="text" id="project-name" placeholder="Enter project name..." required>
-      <button type="submit">Add Project</button>
-    </form>
+  <div class="app-shell">
 
-    <input type="text" id="filter" placeholder="Search project..." />
-    <div id="projects"></div>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="brand">
+          <div class="brand-icon">M</div>
+          <div>
+            <div class="brand-name">Minty</div>
+            <div class="brand-sub">Expense Tracker</div>
+          </div>
+        </div>
+
+        <form id="project-form" class="new-project-form">
+          <label class="form-label">New Project</label>
+          <div class="input-row">
+            <input type="text" id="project-name" placeholder="Project name..." required autocomplete="off"/>
+            <button type="submit" class="btn-add" title="Add Project">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+        </form>
+
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M11 11l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="filter" placeholder="Search projects..." autocomplete="off"/>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-tip">💡 Data saved locally in your browser</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <header class="main-header">
+        <div>
+          <h1 class="main-title">Projects</h1>
+          <p class="main-sub">Track income & expenses across all your projects</p>
+        </div>
+        <div class="header-badge" id="projectCount">0 projects</div>
+      </header>
+
+      <div id="projects" class="projects-grid"></div>
+
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📂</div>
+        <h3>No projects yet</h3>
+        <p>Create your first project using the form on the left to get started.</p>
+      </div>
+    </main>
+
   </div>
 
   <script src="script.js"></script>
