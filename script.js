@@ -2,6 +2,8 @@ const projectForm = document.getElementById('project-form');
 const projectNameInput = document.getElementById('project-name');
 const projectsContainer = document.getElementById('projects');
 const filterInput = document.getElementById('filter');
+const projectCount = document.getElementById('projectCount');
+const emptyState = document.getElementById('emptyState');
 
 let projects = JSON.parse(localStorage.getItem('projects')) || [];
 
@@ -21,7 +23,7 @@ function addProject(e) {
     transactions: []
   };
 
-  projects.unshift(newProject); // new ones on top
+  projects.unshift(newProject);
   updateLocalStorage();
   renderProjects();
   projectNameInput.value = '';
@@ -74,7 +76,6 @@ function exportProjectCSV(projectId) {
   link.href = url;
   link.download = `${project.name.replace(/\s+/g, '_')}_transactions.csv`;
   link.click();
-
   URL.revokeObjectURL(url);
 }
 
@@ -82,21 +83,33 @@ function renderChart(canvasId, income, expense) {
   const ctx = document.getElementById(canvasId);
   if (!ctx) return;
 
+  const total = income + expense;
+  const data = total === 0 ? [1, 0] : [income, expense];
+  const colors = total === 0
+    ? ['rgba(255,255,255,0.06)', 'transparent']
+    : ['#3ddc84', '#ff5c5c'];
+
   new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels: ['Income', 'Expense'],
       datasets: [{
-        data: [income, expense],
-        backgroundColor: ['#4caf50', '#f44336'],
-        borderWidth: 0
+        data,
+        backgroundColor: colors,
+        borderWidth: 0,
+        hoverOffset: 4
       }]
     },
     options: {
-      cutout: '65%',
+      cutout: '72%',
       plugins: {
         legend: { display: false },
-        tooltip: { enabled: true }
+        tooltip: {
+          enabled: total > 0,
+          callbacks: {
+            label: (ctx) => ` $${ctx.parsed.toFixed(2)}`
+          }
+        }
       }
     }
   });
@@ -105,14 +118,25 @@ function renderChart(canvasId, income, expense) {
 function renderProjects(list = projects) {
   projectsContainer.innerHTML = '';
 
-  // sort by most recent project
   const sortedList = [...list].sort(
     (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
   );
 
-  sortedList.forEach(project => {
+  // Update header count
+  const count = sortedList.length;
+  projectCount.textContent = `${count} project${count !== 1 ? 's' : ''}`;
+
+  // Show/hide empty state
+  if (count === 0) {
+    emptyState.classList.add('visible');
+  } else {
+    emptyState.classList.remove('visible');
+  }
+
+  sortedList.forEach((project, index) => {
     const projectDiv = document.createElement('div');
     projectDiv.classList.add('project');
+    projectDiv.style.animationDelay = `${index * 0.05}s`;
 
     let income = 0, expense = 0;
     project.transactions.forEach(t => {
@@ -121,39 +145,74 @@ function renderProjects(list = projects) {
     });
 
     const balance = income - expense;
+    const balanceClass = balance >= 0 ? 'positive' : 'negative';
+    const balanceSign = balance >= 0 ? '+' : '';
 
-    // sort transactions by most recent
     const sortedTransactions = [...project.transactions].sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     );
 
     projectDiv.innerHTML = `
-      <h3>${project.name}</h3>
-      <small>Created: ${new Date(project.createdAt).toLocaleDateString()}</small>
-      <p class="balance">Balance: $${balance.toFixed(2)}</p>
-      <canvas id="chart-${project.id}" height="100"></canvas>
-      <p><span class="money plus">Income: +$${income.toFixed(2)}</span></p>
-      <p><span class="money minus">Expense: -$${expense.toFixed(2)}</span></p>
+      <div class="project-header">
+        <h3>${project.name}</h3>
+      </div>
+      <div class="project-date">Created ${new Date(project.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+
+      <div class="balance-wrap">
+        <div class="balance-label">Balance</div>
+        <div class="balance ${balanceClass}">$${Math.abs(balance).toFixed(2)}</div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="chart-${project.id}" width="110" height="110"></canvas>
+      </div>
+
+      <div class="ie-row">
+        <div class="ie-card">
+          <div class="ie-card-label income">↑ Income</div>
+          <div class="ie-card-amount">$${income.toFixed(2)}</div>
+        </div>
+        <div class="ie-card">
+          <div class="ie-card-label expense">↓ Expense</div>
+          <div class="ie-card-amount">$${expense.toFixed(2)}</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <span class="transaction-form-label">Add Transaction</span>
       <form class="transaction-form" data-id="${project.id}">
-        <input type="text" placeholder="Description..." required>
-        <input type="number" placeholder="Amount..." required>
-        <select>
-          <option value="income">Income</option>
-          <option value="expense">Expense</option>
-        </select>
-        <button type="submit">Add</button>
+        <input type="text" placeholder="Description..." required autocomplete="off"/>
+        <div class="form-row">
+          <input type="number" placeholder="Amount..." required min="0" step="0.01"/>
+          <select>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <button type="submit" class="btn-submit">Add Transaction</button>
       </form>
+
+      ${sortedTransactions.length > 0 ? `
+      <div class="divider"></div>
       <ul class="transaction-list">
         ${sortedTransactions.map(t => `
           <li class="${t.type === 'income' ? 'plus' : 'minus'}">
-            ${t.text} <span>${t.type === 'income' ? '+' : '-'}$${Math.abs(t.amount)}</span>
-            <small>${new Date(t.date).toLocaleDateString()}</small>
-            <button class="delete-btn" onclick="removeTransaction(${project.id}, ${t.id})">x</button>
+            <span class="t-dot"></span>
+            <span class="t-desc">${t.text}</span>
+            <span>${t.type === 'income' ? '+' : '-'}$${Math.abs(t.amount).toFixed(2)}</span>
+            <small>${new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</small>
+            <button class="delete-btn" onclick="removeTransaction(${project.id}, ${t.id})" title="Remove">×</button>
           </li>
         `).join('')}
       </ul>
-      <button class="delete-project" onclick="deleteProject(${project.id})">Delete Project</button>
-      <button style="background:#2196f3;margin-top:10px;" onclick="exportProjectCSV(${project.id})">Export CSV</button>
+      ` : ''}
+
+      <div class="divider"></div>
+      <div class="card-actions">
+        <button class="btn-delete-project" onclick="deleteProject(${project.id})">Delete Project</button>
+        <button class="btn-export" onclick="exportProjectCSV(${project.id})">Export CSV</button>
+      </div>
     `;
 
     projectsContainer.appendChild(projectDiv);
@@ -172,14 +231,12 @@ function attachTransactionFormListeners() {
       const text = form.querySelector('input[type="text"]').value;
       const amount = form.querySelector('input[type="number"]').value;
       const type = form.querySelector('select').value;
-
       if (!text || !amount) return;
       addTransaction(projectId, text, amount, type);
     });
   });
 }
 
-// --- Filter logic fixed ---
 filterInput.addEventListener('input', () => {
   const term = filterInput.value.toLowerCase();
   const filtered = projects.filter(p => p.name.toLowerCase().includes(term));
